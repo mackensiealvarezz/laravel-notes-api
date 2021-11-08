@@ -30,7 +30,9 @@ If for some reason make command isn't working you can run:
 
 After it takes you to the shell run
 
-    php artisan key:generate
+	composer install
+	php artisan key:generate
+	php artisan config:cache
 	php artisan migrate
 	php artisan test
 	php artisan db:seed
