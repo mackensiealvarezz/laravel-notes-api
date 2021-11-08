@@ -64,8 +64,9 @@ class NoteController extends Controller
      * @param  \App\Models\Note  $note
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Note $note)
+    public function destroy(NoteGetRequest $requeest, Note $note)
     {
-        //
+        $note->delete();
+        return response(['message' => 'note has been deleted']);
     }
 }

@@ -224,9 +224,7 @@ class NoteControllerTest extends TestCase
             'title' => $note->title,
             'note'  => $note->note
         ]);
-        $this->assertDatabaseHas('notes',$newChanges);
-
-
+        $this->assertDatabaseHas('notes', $newChanges);
     }
 
     /**
@@ -274,7 +272,7 @@ class NoteControllerTest extends TestCase
         ]);
 
         $this->putJson(route('notes.update', ['note' => $note->id]), $newChanges)
-        ->assertStatus(403);
+            ->assertStatus(403);
 
         //check record hasn't changed
         $this->assertDatabaseHas('notes', [
@@ -283,7 +281,7 @@ class NoteControllerTest extends TestCase
         ]);
     }
 
-      /**
+    /**
      * Test validating for update a note
      *
      * @return void
@@ -293,7 +291,7 @@ class NoteControllerTest extends TestCase
     {
 
         $user = User::factory()
-        ->has(Note::factory()->count(1))
+            ->has(Note::factory()->count(1))
             ->create();
 
         Sanctum::actingAs($user);
@@ -318,7 +316,7 @@ class NoteControllerTest extends TestCase
     public function test_note_validation_update_note()
     {
         $user = User::factory()
-        ->has(Note::factory()->count(1))
+            ->has(Note::factory()->count(1))
             ->create();
 
         Sanctum::actingAs($user);
@@ -339,5 +337,88 @@ class NoteControllerTest extends TestCase
 
         $this->assertDatabaseMissing('notes', $newChanges);
     }
+
+    /**
+     * Test deleting a note
+     *
+     * @return void
+     */
+    public function test_delete_note()
+    {
+
+        $user = User::factory()
+            ->has(Note::factory()->count(1))
+            ->create();
+
+        $note = $user->notes()->first();
+
+        Sanctum::actingAs($user);
+
+        $this->assertDatabaseHas('notes', [
+            'title' => $note->title,
+            'note'  => $note->note
+        ]);
+
+        $this->deleteJson(route('notes.destroy', ['note' => $note->id]))
+            ->assertExactJson(['message' => 'note has been deleted'])
+            ->assertSuccessful();
+
+        $this->assertDatabaseMissing('notes', [
+            'title' => $note->title,
+            'note'  => $note->note
+        ]);
+    }
+
+    /**
+     * Test listing notes without being loged in
+     *
+     * @return void
+     */
+
+    public function test_unauth_delete_note()
+    {
+        $this->getJson(route('notes.destroy', 1))
+            ->assertUnauthorized();
+    }
+
+      /**
+     * Test can't delete another user note
+     *
+     * @return void
+     */
+
+    public function test_unauth_delete_someone_else_note()
+    {
+
+        $user = User::factory()
+            ->has(Note::factory()->count(1))
+            ->create();
+
+        $user2 = User::factory()
+            ->has(Note::factory()->count(1))
+            ->create();
+
+        $note = $user->notes()->first();
+
+
+        //sign in as user 2
+        Sanctum::actingAs($user2);
+
+        //check that the record is there
+        $this->assertDatabaseHas('notes', [
+            'title' => $note->title,
+            'note'  => $note->note
+        ]);
+
+        $this->putJson(route('notes.destroy', ['note' => $note->id]))
+            ->assertStatus(403);
+
+        //check record hasn't changed
+        $this->assertDatabaseHas('notes', [
+            'title' => $note->title,
+            'note'  => $note->note
+        ]);
+    }
+
 
 }
