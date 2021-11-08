@@ -46,4 +46,95 @@ class NoteControllerTest extends TestCase
     }
 
 
+    /**
+     * Test creating a note
+     *
+     * @return void
+     */
+    public function test_creating_note()
+    {
+        $user = User::factory()
+        ->create();
+
+        Sanctum::actingAs($user);
+
+        $note = [
+            'title' => 'new title',
+            'note' => 'this is brand new'
+        ];
+
+        $this->postJson(route('notes.store'), $note)
+        ->assertSuccessful();
+
+        $this->assertDatabaseHas('notes',$note);
+    }
+
+    /**
+     * Test creating a note without being loged in
+     *
+     * @return void
+     */
+
+    public function test_unauth_creating_note()
+    {
+        $note = [
+            'title' => 'new title',
+            'note' => 'this is brand new'
+        ];
+
+          $this->postJson(route('notes.store'), $note)
+        ->assertUnauthorized();
+
+        $this->assertDatabaseMissing('notes', $note);
+    }
+
+    /**
+     * Test vlidation for creating a note
+     *
+     * @return void
+     */
+
+    public function test_title_validation_create_note()
+    {
+
+        $user = User::factory()
+        ->create();
+
+        Sanctum::actingAs($user);
+
+        $note = [
+            'note' => 'this is brand new'
+        ];
+
+        $this->postJson(route('notes.store'), $note)
+        ->assertJsonValidationErrors('title');
+
+        $this->assertDatabaseMissing('notes', $note);
+    }
+
+    public function test_note_validation_create_note()
+    {
+
+        $user = User::factory()
+        ->create();
+
+        Sanctum::actingAs($user);
+
+        $note = [
+            'title' => 'this is brand new'
+        ];
+
+        $this->postJson(route('notes.store'), $note)
+        ->assertJsonValidationErrors('note');
+
+        $this->assertDatabaseMissing('notes', $note);
+    }
+
+
+
+
+
+
+
+
 }

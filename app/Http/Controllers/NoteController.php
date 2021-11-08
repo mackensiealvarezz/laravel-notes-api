@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\NoteRequest;
 use App\Models\Note;
 use Illuminate\Http\Request;
 
@@ -23,9 +24,12 @@ class NoteController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(NoteRequest $request, Note $note)
     {
-        //
+        return response()->json(
+            $request->user()->notes()
+            ->create($request->only(['title', 'note']))
+        );
     }
 
     /**
@@ -34,7 +38,7 @@ class NoteController extends Controller
      * @param  \App\Models\Note  $note
      * @return \Illuminate\Http\Response
      */
-    public function show(Note $note)
+    public function show(NoteRequest $noteRequest, Note $note)
     {
         //
     }
