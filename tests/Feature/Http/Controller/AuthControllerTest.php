@@ -37,5 +37,40 @@ class AuthControllerTest extends TestCase
             'token'
         ])
         ->assertSuccessful();
+
+        $this->assertDatabaseHas('users', [
+            'email' => $user->email
+        ]);
+
+    }
+
+    public function test_invalid_login()
+    {
+         //create user
+         $user = User::factory()->create();
+
+         $this->postJson(route('login'), [
+             'email' => $user->email,
+             'password' => 'wrongpassword'
+         ])
+         ->assertJson(['message' => 'Invalid Credentials'])
+         ->assertUnauthorized();
+    }
+
+
+    public function test_email_validation_login()
+    {
+        $this->postJson(route('login'), [
+            'password' => 'password'
+        ])
+        ->assertJsonValidationErrors('email');
+    }
+
+    public function test_password_validation_login()
+    {
+        $this->postJson(route('login'), [
+            'email' => 'test@user.com'
+        ])
+        ->assertJsonValidationErrors('password');
     }
 }
