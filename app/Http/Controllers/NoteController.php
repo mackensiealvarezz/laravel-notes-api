@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\NoteGetRequest;
 use App\Http\Requests\NoteRequest;
 use App\Models\Note;
 use Illuminate\Http\Request;
@@ -38,9 +39,9 @@ class NoteController extends Controller
      * @param  \App\Models\Note  $note
      * @return \Illuminate\Http\Response
      */
-    public function show(NoteRequest $noteRequest, Note $note)
+    public function show(NoteGetRequest $request, Note $note)
     {
-        //
+        return response()->json($note);
     }
 
     /**

@@ -131,6 +131,67 @@ class NoteControllerTest extends TestCase
     }
 
 
+      /**
+     * Test listing all of a user notes
+     *
+     * @return void
+     */
+    public function test_show_note()
+    {
+
+        $user = User::factory()
+        ->has(Note::factory()->count(1))
+        ->create();
+
+        $note = $user->notes()->first();
+
+        Sanctum::actingAs($user);
+
+        $this->getJson(route('notes.show', ['note' => $note->id]))
+             ->assertExactJson($note->toArray())
+             ->assertSuccessful();
+    }
+
+    /**
+     * Test listing notes without being loged in
+     *
+     * @return void
+     */
+
+    public function test_unauth_show_note()
+    {
+        $this->getJson(route('notes.show', 1))
+        ->assertUnauthorized();
+    }
+
+    /**
+     * Test can't acccess another user note
+     *
+     * @return void
+     */
+
+    public function test_unauth_show_someone_else_note()
+    {
+
+        $user = User::factory()
+        ->has(Note::factory()->count(1))
+        ->create();
+
+        $user2 = User::factory()
+        ->has(Note::factory()->count(1))
+        ->create();
+
+        $note = $user->notes()->first();
+
+        Sanctum::actingAs($user2);
+
+        $this->getJson(route('notes.show', ['note' => $note->id]))
+             ->assertStatus(403);
+    }
+
+
+
+
 
 
 
