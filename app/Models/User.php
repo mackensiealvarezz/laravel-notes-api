@@ -31,4 +31,13 @@ class User extends Authenticatable
         'password',
     ];
 
+     /**
+     * Get all the notes for a user
+     *
+     */
+    public function notes()
+    {
+        return $this->hasMany(Note::class);
+    }
+
 }
