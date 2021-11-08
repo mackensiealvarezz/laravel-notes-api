@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\NoteGetRequest;
+use App\Http\Requests\NotePostRequest;
 use App\Http\Requests\NoteRequest;
 use App\Models\Note;
 use Illuminate\Http\Request;
@@ -29,7 +30,7 @@ class NoteController extends Controller
     {
         return response()->json(
             $request->user()->notes()
-            ->create($request->only(['title', 'note']))
+            ->create($request->validated())
         );
     }
 
@@ -51,9 +52,10 @@ class NoteController extends Controller
      * @param  \App\Models\Note  $note
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, Note $note)
+    public function update(NotePostRequest $request, Note $note)
     {
-        //
+        $note->update($request->validated());
+        return $note;
     }
 
     /**

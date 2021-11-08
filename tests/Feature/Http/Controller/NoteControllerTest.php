@@ -22,8 +22,8 @@ class NoteControllerTest extends TestCase
     public function test_list_notes()
     {
         $user = User::factory()
-        ->has(Note::factory()->count(3))
-        ->create();
+            ->has(Note::factory()->count(3))
+            ->create();
 
         Sanctum::actingAs($user);
 
@@ -42,7 +42,7 @@ class NoteControllerTest extends TestCase
     public function test_unauth_list_notes()
     {
         $this->getJson(route('notes.index'))
-        ->assertUnauthorized();
+            ->assertUnauthorized();
     }
 
 
@@ -54,7 +54,7 @@ class NoteControllerTest extends TestCase
     public function test_creating_note()
     {
         $user = User::factory()
-        ->create();
+            ->create();
 
         Sanctum::actingAs($user);
 
@@ -64,9 +64,9 @@ class NoteControllerTest extends TestCase
         ];
 
         $this->postJson(route('notes.store'), $note)
-        ->assertSuccessful();
+            ->assertSuccessful();
 
-        $this->assertDatabaseHas('notes',$note);
+        $this->assertDatabaseHas('notes', $note);
     }
 
     /**
@@ -82,8 +82,8 @@ class NoteControllerTest extends TestCase
             'note' => 'this is brand new'
         ];
 
-          $this->postJson(route('notes.store'), $note)
-        ->assertUnauthorized();
+        $this->postJson(route('notes.store'), $note)
+            ->assertUnauthorized();
 
         $this->assertDatabaseMissing('notes', $note);
     }
@@ -98,7 +98,7 @@ class NoteControllerTest extends TestCase
     {
 
         $user = User::factory()
-        ->create();
+            ->create();
 
         Sanctum::actingAs($user);
 
@@ -107,7 +107,7 @@ class NoteControllerTest extends TestCase
         ];
 
         $this->postJson(route('notes.store'), $note)
-        ->assertJsonValidationErrors('title');
+            ->assertJsonValidationErrors('title');
 
         $this->assertDatabaseMissing('notes', $note);
     }
@@ -116,7 +116,7 @@ class NoteControllerTest extends TestCase
     {
 
         $user = User::factory()
-        ->create();
+            ->create();
 
         Sanctum::actingAs($user);
 
@@ -125,13 +125,13 @@ class NoteControllerTest extends TestCase
         ];
 
         $this->postJson(route('notes.store'), $note)
-        ->assertJsonValidationErrors('note');
+            ->assertJsonValidationErrors('note');
 
         $this->assertDatabaseMissing('notes', $note);
     }
 
 
-      /**
+    /**
      * Test listing all of a user notes
      *
      * @return void
@@ -140,16 +140,16 @@ class NoteControllerTest extends TestCase
     {
 
         $user = User::factory()
-        ->has(Note::factory()->count(1))
-        ->create();
+            ->has(Note::factory()->count(1))
+            ->create();
 
         $note = $user->notes()->first();
 
         Sanctum::actingAs($user);
 
         $this->getJson(route('notes.show', ['note' => $note->id]))
-             ->assertExactJson($note->toArray())
-             ->assertSuccessful();
+            ->assertExactJson($note->toArray())
+            ->assertSuccessful();
     }
 
     /**
@@ -161,7 +161,7 @@ class NoteControllerTest extends TestCase
     public function test_unauth_show_note()
     {
         $this->getJson(route('notes.show', 1))
-        ->assertUnauthorized();
+            ->assertUnauthorized();
     }
 
     /**
@@ -174,28 +174,170 @@ class NoteControllerTest extends TestCase
     {
 
         $user = User::factory()
-        ->has(Note::factory()->count(1))
-        ->create();
+            ->has(Note::factory()->count(1))
+            ->create();
 
         $user2 = User::factory()
-        ->has(Note::factory()->count(1))
-        ->create();
+            ->has(Note::factory()->count(1))
+            ->create();
 
         $note = $user->notes()->first();
 
         Sanctum::actingAs($user2);
 
         $this->getJson(route('notes.show', ['note' => $note->id]))
-             ->assertStatus(403);
+            ->assertStatus(403);
     }
 
+    /**
+     * Test updating a note
+     *
+     * @return void
+     */
+    public function test_update_note()
+    {
+
+        $user = User::factory()
+            ->has(Note::factory()->count(1))
+            ->create();
+
+        $note = $user->notes()->first();
+
+        $newChanges = [
+            'title' => 'new title',
+            'note'  => 'testing',
+        ];
+
+        Sanctum::actingAs($user);
+
+        //check that the record is there
+        $this->assertDatabaseHas('notes', [
+            'title' => $note->title,
+            'note'  => $note->note
+        ]);
+
+        $this->putJson(route('notes.update', ['note' => $note->id]), $newChanges)
+            ->assertSuccessful();
+
+        //validate changes
+        $this->assertDatabaseMissing('notes', [
+            'title' => $note->title,
+            'note'  => $note->note
+        ]);
+        $this->assertDatabaseHas('notes',$newChanges);
 
 
+    }
 
+    /**
+     * Test updating a note without loged in
+     * @return void
+     */
 
+    public function test_unauth_update_note()
+    {
+        $this->getJson(route('notes.show', 1))
+            ->assertUnauthorized();
+    }
 
+    /**
+     * Test can't acccess another user note
+     *
+     * @return void
+     */
 
+    public function test_unauth_update_someone_else_note()
+    {
 
+        $user = User::factory()
+            ->has(Note::factory()->count(1))
+            ->create();
 
+        $user2 = User::factory()
+            ->has(Note::factory()->count(1))
+            ->create();
+
+        $note = $user->notes()->first();
+
+        $newChanges = [
+            'title' => 'new title',
+            'note'  => 'testing',
+        ];
+
+        //sign in as user 2
+        Sanctum::actingAs($user2);
+
+        //check that the record is there
+        $this->assertDatabaseHas('notes', [
+            'title' => $note->title,
+            'note'  => $note->note
+        ]);
+
+        $this->putJson(route('notes.update', ['note' => $note->id]), $newChanges)
+        ->assertStatus(403);
+
+        //check record hasn't changed
+        $this->assertDatabaseHas('notes', [
+            'title' => $note->title,
+            'note'  => $note->note
+        ]);
+    }
+
+      /**
+     * Test validating for update a note
+     *
+     * @return void
+     */
+
+    public function test_title_validation_update_note()
+    {
+
+        $user = User::factory()
+        ->has(Note::factory()->count(1))
+            ->create();
+
+        Sanctum::actingAs($user);
+
+        $note = $user->notes()->first();
+
+        $newChanges = [
+            'note'  => 'testing',
+        ];
+
+        $this->assertDatabaseHas('notes', [
+            'title' => $note->title,
+            'note'  => $note->note
+        ]);
+
+        $this->putJson(route('notes.update', ['note' => $note->id]), $newChanges)
+            ->assertJsonValidationErrors('title');
+
+        $this->assertDatabaseMissing('notes', $newChanges);
+    }
+
+    public function test_note_validation_update_note()
+    {
+        $user = User::factory()
+        ->has(Note::factory()->count(1))
+            ->create();
+
+        Sanctum::actingAs($user);
+
+        $note = $user->notes()->first();
+
+        $newChanges = [
+            'title'  => 'testing',
+        ];
+
+        $this->assertDatabaseHas('notes', [
+            'title' => $note->title,
+            'note'  => $note->note
+        ]);
+
+        $this->putJson(route('notes.update', ['note' => $note->id]), $newChanges)
+            ->assertJsonValidationErrors('note');
+
+        $this->assertDatabaseMissing('notes', $newChanges);
+    }
 
 }
